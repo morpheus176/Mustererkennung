@@ -3,6 +3,9 @@ import numpy as np
 import scipy.spatial.distance
 from scipy.spatial.distance import cdist
 from common import log_math
+import operator
+from scipy.stats import multivariate_normal
+
 
 class KNNClassifier(object):
 
@@ -14,8 +17,9 @@ class KNNClassifier(object):
             metric: Zu verwendendes Distanzmass (string),
                 siehe auch scipy Funktion cdist
         """
-
-        raise NotImplementedError('Implement me')
+        self.k = k_neighbors
+        self.metric = metric
+        #raise NotImplementedError('Implement me')
 
     def estimate(self, train_samples, train_labels):
         """Erstellt den k-Naechste-Nachbarn Klassfikator mittels Trainingdaten.
@@ -34,7 +38,9 @@ class KNNClassifier(object):
 
         mit d Trainingsbeispielen und t dimensionalen Merkmalsvektoren.
         """
-        raise NotImplementedError('Implement me')
+        self.training_data = train_samples
+        self.training_labels = train_labels
+        #raise NotImplementedError('Implement me')
 
     def classify(self, test_samples):
         """Klassifiziert Test Daten.
@@ -54,7 +60,35 @@ class KNNClassifier(object):
         # Nuetzliche Funktionen: scipy.spatial.distance.cdist, np.argsort
         # http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
         # http://docs.scipy.org/doc/numpy/reference/generated/numpy.argsort.html
-        raise NotImplementedError('Implement me')
+        
+        prediction = []
+        
+        for i in range(test_samples.shape[0]): # für jeden zu klassifizierenden Datenpunkt
+            stats = {'a': 0, 'b': 0, 'c': 0}
+            a = test_samples[i] # keine Veränderung von Arrays in For Loops in Python, deswegen ein temporäres Objekt
+            if len(a.shape) != 2: # mache eben aus a ein 2d-Array mit nur einer Zeile, falls es noch keins ist.
+                a = a.reshape(1, a.shape[0])
+            distanceTest = scipy.spatial.distance.cdist(a, self.training_data, self.metric)[0] # Hierfür MUESSEN beide Arrays zweidimensional sein
+            distanceList = np.stack((distanceTest, self.training_labels), axis=0).astype('float64') # Klebe die beiden Arrays als Spalten zusammen!
+            #print(distanceList)
+            sortedDistanceList = distanceList[:,distanceList[0,:].argsort()] # Sortiere nach der ersten Spalte!
+            kNearestNeighbors = sortedDistanceList[:,:self.k] # Nimm nur die ersten k Werte -> k nächste Nachbarn
+            for l in range(0, self.k):
+                if kNearestNeighbors[1,l] == 0:
+                    stats['a'] += 1
+                elif kNearestNeighbors[1,l] == 1:
+                    stats['b'] += 1
+                else:
+                    stats['c'] += 1
+            if max(stats.items(), key=operator.itemgetter(1))[0] == 'a':
+                prediction.append(0)
+            elif max(stats.items(), key=operator.itemgetter(1))[0] == 'b':
+                prediction.append(1)
+            else:
+                prediction.append(2) # Falls gleich viele Signale und Background in der Nachbarschaft liegen
+                # können wir keine Entscheidung treffen...
+        return np.asarray(prediction) # Gib ein numpy Array zurück, weil man damit besser arbeiten kann als mit einer Liste
+        #raise NotImplementedError('Implement me')
 
 
 class GaussianClassifier(object):
@@ -63,7 +97,13 @@ class GaussianClassifier(object):
         """Initialisiert den Klassifikator
         Legt Klassenvariablen fuer die Modellparameter an.
         """
-        raise NotImplementedError('Implement me')
+
+        self.mean_list = []
+        self.cov_list = []
+        self.p_k = []
+        self.prob_k = []
+
+        # raise NotImplementedError('Implement me')
 
     def estimate(self, train_samples, train_labels):
         """Erstellt den Normalverteilungsklassikator mittels Trainingdaten.
@@ -80,7 +120,33 @@ class GaussianClassifier(object):
 
         mit d Trainingsbeispielen und t dimensionalen Merkmalsvektoren.
         """
-        raise NotImplementedError('Implement me')
+
+        self.train_data = train_samples
+        self.train_labels = train_labels
+
+        self.labels = np.unique(self.train_labels)
+
+        for label in self.labels:
+            class_data = self.train_data[self.train_labels==label]
+
+            mean = sum(class_data)/len(class_data)
+            meanx = sum(class_data[:, 0])/len(class_data[:, 0])
+            meany = sum(class_data[:, 1])/len(class_data[:, 1])
+
+            sx = 1/(len(class_data[:, 0]) - 1) * sum((class_data[:, 0] - meanx)**2)
+            sy = 1/(len(class_data[:, 1]) - 1) * sum((class_data[:, 1] - meany)**2)
+            sxy = 1/(len(class_data[:, 0]) - 1) * sum((class_data[:, 0] - meanx) * (class_data[:, 1] - meany))
+
+            cov = np.matrix([[sx, sxy], [sxy, sy]])
+
+            self.mean_list.append(mean)
+            self.cov_list.append(cov)
+
+            p = len(class_data)/len(self.train_data)
+            self.p_k.append(p)
+        
+
+        # raise NotImplementedError('Implement me')
 
     def classify(self, test_samples):
         """Klassifiziert Test Daten.
@@ -107,8 +173,42 @@ class GaussianClassifier(object):
         # Erstellen Sie fuer die Auswertung der transformierten Normalverteilung
         # eine eigene Funktion. Diese wird in den folgenden Aufgaben noch von
         # Nutzen sein.
+        self.prediction = []
+        self.test_data = test_samples
+        self.prob_list = np.zeros((len(self.test_data), 3))
+        #self.total_list = []
 
-        raise NotImplementedError('Implement me')
+        self.total = 0
+
+        for i in range(0,len(self.labels)):
+
+            # Berechnung der klassenbedingten Dichten
+            prob = multivariate_normal.pdf(self.test_data, mean=self.mean_list[i], cov=self.cov_list[i])
+            self.prob_list[:, i] = prob
+
+            # Berechnung der totalen Wahrscheinlichkeiten
+            self.total += prob * self.p_k[i]
+
+        self.post = np.zeros((len(self.test_data), 3))
+        
+        for i in range(0, len(self.test_data)):
+
+            for j in range(0, len(self.labels)):
+                self.post[i, j] = self.p_k[j] * self.prob_list[i, j] / self.total[i]
+
+            if self.post[i, :].argmax() == 0:
+                self.prediction.append(self.labels[0])
+            elif self.post[i, :].argmax() == 1:
+                self.prediction.append(self.labels[1])
+            else:
+                self.prediction.append(self.labels[2])
+
+        return np.asarray(self.prediction)
+
+
+        # raise NotImplementedError('Implement me')
+
+        
 
 class MDClassifierClassIndep(object):
 

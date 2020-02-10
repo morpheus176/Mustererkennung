@@ -1,7 +1,8 @@
 from common.data_provider import DataProvider
 import matplotlib.pyplot as plt
-
-
+from common.classification import KNNClassifier
+from common.classification import ClassificationEvaluator
+from common.classification import CrossValidation
 
 def aufg01():
     # Zur Einfuehrung werden auf einem Beispieldatensatz Klassifikatoren
@@ -29,6 +30,8 @@ def aufg01():
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
+    # fig, (ax, ax2) = plt.subplots(1, 2)
+
     data = train_data_provider.get_class_arr(0)
     ax.scatter(data[:, 0], data[:, 1], c='#FF0000', edgecolor=(0, 0, 0))
     data = train_data_provider.get_class_arr(1)
@@ -36,7 +39,7 @@ def aufg01():
     data = train_data_provider.get_class_arr(2)
     ax.scatter(data[:, 0], data[:, 1], c='#0000FF', edgecolor=(0, 0, 0))
 
-    plt.show()
+    # plt.show()
 
     #
     # Implementieren Sie einen Naechster-Nachbar-Klassifikator.
@@ -44,15 +47,40 @@ def aufg01():
     # Testen Sie verschiedene Abstandsmasse. Welche halten Sie insbesondere fuer sinnvoll?
     train_data, train_labels = train_data_provider.get_dataset_and_labels()
     test_data, test_labels_gt = test_data_provider.get_dataset_and_labels()
-    knn_classifier = KNNClassifier(k_neighbors=1, metric='euclidean')
+    test_labels_gt = test_labels_gt.astype('float64')
+    train_labels = train_labels.astype('float64')
+
+    knn_classifier = KNNClassifier(k_neighbors=70, metric='cityblock') # euclidean, cityblock, chebyshev
     knn_classifier.estimate(train_data, train_labels)
     estimated_labels = knn_classifier.classify(test_data)
+
+    # print(len(estimated_labels==0))
+
+    # print(test_labels_gt.shape, estimated_labels.shape)
+    # print(test_labels_gt.dtype, estimated_labels.dtype)
+
+#
+    #data_x = test_data[mask, 0]
+    #data_y = test_data[mask, 1]
+    #ax2.scatter(data_x, data_y, c='#FF0000', edgecolor=(0, 0, 0))
+    #data = test_data[estimated_labels == 1]
+    #ax2.scatter(data[:, 0], data[:, 1], c='#00FF00', edgecolor=(0, 0, 0))
+    #data = test_data[estimated_labels == 2]
+    #ax2.scatter(data[:, 0], data[:, 1], c='#0000FF', edgecolor=(0, 0, 0))
+    #fig.tight_layout()
+    #plt.show()
 
     #
     # Nutzen Sie zur Evaluation der Ergebnisse die Klasse ClassificationEvaluator
     # im Modul common.classifiers.
 
-    raise NotImplementedError('Implement me')
+    evals = ClassificationEvaluator(estimated_labels, test_labels_gt)
+
+    error_rate, n_wrong, n_samples = evals.error_rate()
+
+    print(error_rate, n_wrong, n_samples)
+
+    # raise NotImplementedError('Implement me')
 
     # Ein NN-Klassifikator alleine ist meist nicht ausreichend. Erweitern Sie
     # den Klassifikator zum k-NN Klassifikator.
@@ -66,8 +94,20 @@ def aufg01():
     # Parameter k zu optimieren.
     # In den folgenden Aufgaben ist es Ihnen freigestellt, ob Sie Kreuzvalidierung
     # nutzen oder direkt auf den Testdaten optimieren.
+    
+    cross = CrossValidation(train_data, train_labels, 5)
 
-    raise NotImplementedError('Implement me')
+    for i in range(65, 76):
+
+        knn = KNNClassifier(i, 'cityblock')
+        crossval_overall_result, crossval_class_results = cross.validate(knn)
+        print('Anzahl der Nachbarn = ', i, ' : ', crossval_overall_result)
+
+    ''' Optimum bei k_neighbours = 70 '''
+
+    # raise NotImplementedError('Implement me')
+
+
 
 
 if __name__ == '__main__':
