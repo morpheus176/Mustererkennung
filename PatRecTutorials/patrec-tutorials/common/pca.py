@@ -5,7 +5,7 @@ import numpy as np
 
 
 class PCA(object):
-    """Einfaches 3D Beispiel fuer die Hauptkomponentenanalyse."""
+    """Einfaches 3D Beispiel fuer die Hauptkomponentenanalys^e."""
 
     def __init__(self, samples):
         #
@@ -21,7 +21,17 @@ class PCA(object):
         # spaeter benoetigen, in entsprechenden Klassenvariablen.
         # Achten Sie darauf, dass alle Klassenvariablen sinnvoll belegt werden.
 
-        raise NotImplementedError('Implement me')
+        self.samples = samples
+
+        self.train_mean = np.mean(self.samples, axis = 0)
+        mean_free = self.samples - self.train_mean
+
+        cov = np.cov(mean_free, rowvar=0)
+
+        self.eig_vals, self.eig_vecs = np.linalg.eig(cov)
+        self.eig_vals = self.eig_vals.real
+
+        # raise NotImplementedError('Implement me')
 
     def transform_samples(self, samples, target_dim):
         if samples.shape[1] != self.eig_vecs.shape[0]:
@@ -32,7 +42,22 @@ class PCA(object):
         #
         # Implementieren Sie die Dimensionsreduktion
         # Ueberlegen Sie, wie man die gesamte samples Matrix in einem transformiert (ohne Schleife)
-        raise NotImplementedError('Implement me')
+
+        mean_free = samples - self.train_mean
+
+        xx = np.argsort(-self.eig_vals)
+
+        sorted_ew = self.eig_vals[xx]   
+        sorted_ev = self.eig_vecs[:, xx]
+
+        self.new_ew = sorted_ew[:target_dim]
+        self.new_ev = sorted_ev[:, :target_dim]
+
+        transformed = mean_free @ self.new_ev
+
+        #raise NotImplementedError('Implement me')
+
+        return transformed
 
 
     def plot_subspace(self, limits, color, linewidth, alpha, ellipsoid=True, coord_system=True, target_dim=None):

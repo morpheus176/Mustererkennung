@@ -47,33 +47,39 @@ class Lloyd(object):
                 codebook[i, :] = samples[x, :]
         
         err = 0
-        clusters = defaultdict(list)
         xx = 1
 
         distance = cdist(samples, codebook)
+        labels = distance.argmin(axis=1)     
         
         for i in range(len(samples[:,0])):
             key = distance[i, :].argmin()
             err += distance[i, key]
-            clusters[str(key)].append(samples[i,:])
+            # clusters[str(key)].append(samples[i,:])
 
     
         it = 0
-        while xx > 1e-4:
+        while xx > 1e-7:
             codebook_neu = np.zeros(codebook.shape)
             new_err = 0
 
             for i in range(codebook_size):
-                item = np.asarray(clusters[str(i)])
-                mean = (np.mean(item[:, 0]), np.mean(item[:, 1]))
-                codebook_neu[i, :] = mean
+                class_data = samples[labels == i]
+                x = np.mean(class_data, axis=0)
+                codebook_neu[i, :] = x
+
+
+            #for i in range(codebook_size):
+            #    item = np.asarray(clusters[str(i)])
+            #    mean = (np.mean(item[:, 0]), np.mean(item[:, 1]))
+            #    codebook_neu[i, :] = mean
 
             distance = cdist(samples, codebook_neu)
+            labels = distance.argmin(axis=1) 
             
             for i in range(len(samples[:,0])):
                 key = distance[i, :].argmin()
                 new_err += distance[i, key]
-                clusters[str(key)].append(samples[i,:])
             
             xx = np.abs(err-new_err)/new_err
             print(it)

@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
 from sklearn import svm
-from common.classification import ClassificationEvaluator
+from common.classification import ClassificationEvaluator, CrossValidation
 from common.data_provider import DataProvider
 from common import visualization
+import numpy as np
 
 
 def aufg07():
@@ -35,11 +36,65 @@ def aufg07():
     # Fuer die Evaluierung koennen Sie im Folgenden wieder den ClassificationEvaluator
     # aus dem Modul common.classifiers verwenden.
 
-    raise NotImplementedError('Implement me')
+
+    train_data_provider = DataProvider(DataProvider.DATA2DROOT_TRAIN)
+    test_data_provider = DataProvider(DataProvider.DATA2DROOT_TEST)
+
+    train_data, train_labels = train_data_provider.get_dataset_and_labels()
+    test_data, test_labels_gt = test_data_provider.get_dataset_and_labels()
+
+    train_labels = train_labels.astype(dtype='float64')
+    test_labels_gt = test_labels_gt.astype(dtype='float64')
+
+    train_data_02 = np.concatenate((train_data_provider.get_class_arr(0), train_data_provider.get_class_arr(2)))
+    train_labels_02 = np.concatenate((train_labels[train_labels==0], train_labels[train_labels==2]))
+
+    test_data_02 = np.concatenate((test_data_provider.get_class_arr(0), test_data_provider.get_class_arr(2)))
+    test_labels_02 = np.concatenate((test_labels_gt[test_labels_gt==0], test_labels_gt[test_labels_gt==2]))
+
+    clf = svm.LinearSVC()
+    clf.fit(train_data_02, train_labels_02)
+
+    estimated_labels = clf.predict(test_data_02)
+
+    evals = ClassificationEvaluator(estimated_labels, test_labels_02)
+    error_rate, n_wrong, n_samples = evals.error_rate()
+    print(error_rate, n_wrong, n_samples)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    visualization.plot_svm(ax, test_data_02, test_labels_02, clf, step_size=0.1)
+    #plt.show()
+
+    # raise NotImplementedError('Implement me')
 
     # Trainieren Sie nun eine SVM fuer die Klassen 1 und 2.
     # Evaluieren Sie, welcher Kernel geeignet ist, um das Problem zu loesen.
-    raise NotImplementedError('Implement me')
+
+    train_data_12 = np.concatenate((train_data_provider.get_class_arr(1), train_data_provider.get_class_arr(2)))
+    train_labels_12 = np.concatenate((train_labels[train_labels==1], train_labels[train_labels==2]))
+
+    test_data_12 = np.concatenate((test_data_provider.get_class_arr(1), test_data_provider.get_class_arr(2)))
+    test_labels_12 = np.concatenate((test_labels_gt[test_labels_gt==1], test_labels_gt[test_labels_gt==2]))
+
+    kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+
+    for kernel in kernels:
+        clf = svm.SVC(kernel=kernel)
+        clf.fit(train_data_12, train_labels_12)
+
+        estimated_labels = clf.predict(test_data_12)
+
+        evals = ClassificationEvaluator(estimated_labels, test_labels_12)
+        error_rate, n_wrong, n_samples = evals.error_rate()
+        print(kernel, error_rate, n_wrong, n_samples)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        visualization.plot_svm(ax, test_data_12, test_labels_12, clf, step_size=0.1)
+        #plt.show()
+
+    # raise NotImplementedError('Implement me')
 
     # Trainieren Sie nun eine Multi-Class SVM zur Loesung des 3-Klassenproblems
     # unter Verwendung eines geeigneten Kernels.
@@ -47,7 +102,32 @@ def aufg07():
     # werden?
     # Hinweis: Starten Sie zunaechst mit den Grundeinstellungen der Bibliothek.
 
-    raise NotImplementedError('Implement me')
+    clf = svm.SVC()
+    clf.fit(train_data, train_labels)
+
+    estimated_labels = clf.predict(test_data)
+
+    evals = ClassificationEvaluator(estimated_labels, test_labels_gt)
+    error_rate, n_wrong, n_samples = evals.error_rate()
+    print('3 Klassen: bcf', error_rate, n_wrong, n_samples)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    visualization.plot_svm(ax, test_data, test_labels_gt, clf, step_size=0.1)
+    # plt.show()
+
+
+    #for i in range(1, 100):
+
+    #    clf = svm.SVC(kernel = 'rbf')
+    #    clf.fit(train_data, train_labels)
+    #    estimated_labels = clf.predict(test_data)
+    #    
+    #    evals = ClassificationEvaluator(estimated_labels, test_labels_gt)
+    #    error_rate, n_wrong, n_samples = evals.error_rate()
+    #    print('gamma = ', i, ' : ', error_rate, n_wrong, n_samples)
+
+    #raise NotImplementedError('Implement me')
 
     # Vergleichen Sie Ihre Ergebnisse mit den bisher erzielten
     # Klassifikationsfehlerraten.

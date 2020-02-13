@@ -5,7 +5,7 @@ from scipy.spatial.distance import cdist
 
 from common import visualization
 from common.data_provider import DataProvider
-from common.vector_quantization import Lloyd
+from common.vector_quantization_copy import Lloyd
 
 
 def aufg03():
@@ -29,13 +29,16 @@ def aufg03():
     # Waehlen Sie eine geeignete Codebuchgroesse und speichern Sie sie in der
     # lokalen Variablen codebook_size.
 
-    raise NotImplementedError('Implement me')
+    codebook_size = 10
+    # raise NotImplementedError('Implement me')
 
     #
     # Im Nachfolgenden werden die Daten unabhaengig von der Klassenzugehoerigkeit
     # geclustert.
     lloyd_quantizer = Lloyd()
     codebook = lloyd_quantizer.cluster(train_data, codebook_size)
+
+    #print(codebook)
 
     #
     # Quantisieren Sie die Trainingsdaten mit dem berechneten Codebuch.
@@ -45,7 +48,10 @@ def aufg03():
     # Nuetzliche Funktionen:
     # https://docs.scipy.org/doc/numpy/reference/generated/numpy.argmin.html
 
-    raise NotImplementedError('Implement me')
+    distance = cdist(train_data, codebook)
+    labels = distance.argmin(axis=1)
+
+    #raise NotImplementedError('Implement me')
 
     #
     # Berechnen Sie nun eine Normalverteilung je Cluster und visualisieren Sie diese.
@@ -58,11 +64,23 @@ def aufg03():
     # Nuetzliche Funktionen: np.cov
     # http://docs.scipy.org/doc/numpy/reference/generated/numpy.cov.html
     # Zur Visualisierung: visualization.plot_norm_dist_ellipse
+
+    cov = []
+
+    for i in range(codebook_size):
+        class_data = train_data[labels == i]
+        x = np.cov(class_data, rowvar=0)
+        cov.append(x)
     
     cmap = cm.get_cmap('hsv')
     c = cmap(np.linspace(0, 1, codebook_size))
 
-    raise NotImplementedError('Implement me')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    visualization.plot_norm_dist_ellipse(ax, codebook, cov, color=c)
+
+    # raise NotImplementedError('Implement me')
 
     #
     # Visualisieren Sie die Zugehoerigkeit der einzelnen Samples zu den
@@ -73,7 +91,11 @@ def aufg03():
     labels_norm = labels / float(codebook_size - 1)
     cmap = cm.get_cmap('hsv')
     c = cmap(labels_norm)
-    raise NotImplementedError('Implement me')
+
+    ax.scatter(train_data[:, 0], train_data[:, 1], c=c, edgecolor=(0, 0, 0))
+    plt.show()
+
+    # raise NotImplementedError('Implement me')
 
     # (optional) Implementieren Sie auch den k-means-Algorithmus nach McQueen.
     # Vergleichen Sie die Laufzeit und die Qualitaet des erzeugten Modells

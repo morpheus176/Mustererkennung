@@ -78,7 +78,7 @@ def aufg02():
     visualization.plot_norm_dist_ellipse(ax, mean_list, cov_list, color=['orange', 'darkgreen', 'cyan'])
 
 
-    #plt.show()
+    plt.show()
 
     # raise NotImplementedError('Implement me')
 
@@ -111,7 +111,7 @@ def aufg02():
 
     evals = ClassificationEvaluator(estimated_labels, test_labels_gt)
     error_rate, n_wrong, n_samples = evals.error_rate()
-    print(error_rate, n_wrong, n_samples)
+    print('Bayes:', error_rate, n_wrong, n_samples)
 
     # raise NotImplementedError('Implement me')
 

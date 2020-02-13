@@ -38,7 +38,12 @@ def aufg05():
     # Mit show_data(data, width) koennen Sie Bilder anzeigen lassen. Die Anzahl der
     # Bilder muss ein Vielfaches des Parameters width sein.
     train_data_provider = DataProvider(DataProvider.MNIST_TRAIN)
-    raise NotImplementedError('Implement me')
+    train_data = train_data_provider.get_dataset_arr()
+
+    show_data(train_data[2000:2100, :], width=10)
+    plt.show()
+    
+    # raise NotImplementedError('Implement me')
 
     # Transformieren Sie die 784-dimensionalen Daten des MNIST-Datensatzes in
     # einen geeignet gewaehlten niedriger-dimensionalen Merkmalsraum. Begruenden
@@ -57,7 +62,11 @@ def aufg05():
     # Optional: Visualisieren Sie die MNIST-Daten in einem 2D Unterraum. Faerben Sie
     # die Datenpunkte nach Klassenzugehoerigkeit.
 
-    raise NotImplementedError('Implement me')
+    target_dim = 70
+
+    pca = PCA(train_data)
+    transformed = pca.transform_samples(train_data, target_dim)
+    # raise NotImplementedError('Implement me')
 
 
 def show_data(data, width=1):

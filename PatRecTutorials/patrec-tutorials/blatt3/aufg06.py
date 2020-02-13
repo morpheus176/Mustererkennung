@@ -23,6 +23,8 @@ def aufg06():
     train_data, train_labels = train_data_provider.get_dataset_and_labels()
     test_data, test_labels_gt = test_data_provider.get_dataset_and_labels()
 
+    
+
     raise NotImplementedError('Implement me')
 
 
